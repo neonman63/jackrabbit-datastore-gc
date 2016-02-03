@@ -1,0 +1,86 @@
+<?xml version="1.0"?>
+<!DOCTYPE Repository
+          PUBLIC "-//The Apache Software Foundation//DTD Jackrabbit 2.0//EN"
+          "http://jackrabbit.apache.org/dtd/repository-2.0.dtd">
+
+<Repository>
+<!-- Common Datasource for persistance managers -->
+    <DataSources>
+        <DataSource name="pmDS">
+           <param name="driver" value="org.postgresql.Driver" />
+            <param name="url" value="jdbc:postgresql://localhost:5432/JCR" />
+            <param name="user" value="username" />
+            <param name="password" value="password" />
+            <param name="databaseType" value="postgresql"/>
+            <param name="maxPoolSize" value="10"/>
+        </DataSource>
+
+        <DataSource name="journalDS">
+    	    <param name="driver" value="org.postgresql.Driver" />
+            <param name="url" value="jdbc:postgresql://localhost:5432/JCR_JOURNAL" />
+            <param name="user" value="username" />
+            <param name="password" value="password" />
+            <param name="databaseType" value="postgresql"/>
+            <param name="maxPoolSize" value="10"/>
+        </DataSource>
+    </DataSources>
+
+    <FileSystem class="org.apache.jackrabbit.core.fs.local.LocalFileSystem">
+	<param name="path" value="${org.apache.jackrabbit.repository.home}/repository"/>
+    </FileSystem>
+
+<!-- Datastore shared access on all nodes in cluster (one store for all nodes) -->
+     <DataStore class="org.apache.jackrabbit.core.data.FileDataStore">
+	 <param name="path" value="/mnt/store/datastore"/>
+         <param name="minRecordLength" value="100"/>
+     </DataStore>
+
+    <Security appName="Jackrabbit">
+	<AccessManager class="org.apache.jackrabbit.core.security.SimpleAccessManager"></AccessManager>
+        <LoginModule class="org.apache.jackrabbit.core.security.SimpleLoginModule">
+          <param name="anonymousId" value="anonymous" />
+         </LoginModule>
+    </Security>
+
+    <Workspaces rootPath="${org.apache.jackrabbit.repository.home}/workspaces" defaultWorkspace="default" maxIdleTime="2"/>
+    <Workspace name="${wsp.name}">
+        <FileSystem class="org.apache.jackrabbit.core.fs.local.LocalFileSystem">
+            <param name="path" value="${wsp.home}"/>
+        </FileSystem>
+
+<!-- Same PM on every nodes in cluster -->
+        <PersistenceManager class="org.apache.jackrabbit.core.persistence.pool.PostgreSQLPersistenceManager">
+            <param name="dataSourceName" value="pmDS"/>
+            <param name="schemaObjectPrefix" value="pm_${wsp.name}_" />
+            <param name="bundleCacheSize" value="512"/>
+        </PersistenceManager>
+        
+        <SearchIndex class="org.apache.jackrabbit.core.query.lucene.SearchIndex">
+            <param name="path" value="${wsp.home}/index"/>
+        </SearchIndex>
+    </Workspace>
+
+    <Versioning rootPath="/version">
+      <FileSystem class="org.apache.jackrabbit.core.fs.local.LocalFileSystem">
+          <param name="path" value="${org.apache.jackrabbit.repository.home}/version" />
+      </FileSystem>
+<!-- Same PM on every nodes in cluster -->
+        <PersistenceManager class="org.apache.jackrabbit.core.persistence.pool.PostgreSQLPersistenceManager">
+            <param name="dataSourceName" value="pmDS"/>
+            <param name="schemaObjectPrefix" value="pm_ver_" />
+        </PersistenceManager>
+    </Versioning>
+
+    <SearchIndex class="org.apache.jackrabbit.core.query.lucene.SearchIndex">
+        <param name="path" value="${org.apache.jackrabbit.repository.home}/repository/index"/>
+    </SearchIndex>
+
+<!-- Cluster Node config (same PM on all nodes), journal in file -->
+    <Cluster id="cluster-gc" syncDelay="300">
+		<Journal class="org.apache.jackrabbit.core.journal.DatabaseJournal">
+	    	    <param name="revision" value="${org.apache.jackrabbit.repository.home}/revision.log" />
+	    	    <param name="dataSourceName" value="journalDS"/>
+		</Journal>
+    </Cluster>
+<!-- Cluster config -->
+</Repository>
