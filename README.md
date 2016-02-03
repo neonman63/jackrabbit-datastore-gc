@@ -4,7 +4,7 @@
 
 * Examples can be found in examples/ directory
 
-config.properties:
+config.properties:  
 **repo** - path to repository home (repository.xml + workspaces)  
 **gc_cron** - cron expression for Quartz Scheduler  
 **gc_sweep** - run sweep? (true/false), will be run only then gc_mark = true  
